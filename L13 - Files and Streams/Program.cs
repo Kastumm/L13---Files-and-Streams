@@ -1,101 +1,98 @@
-﻿using System;
+﻿
+using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
+using HashFiles;
 
 namespace Lesson13
 {
+
     public static class ProgramL13
     {
+
         public static void Main(string[] args)
         {
-            string rootPathDir1 = @"D:\L13DIR\DIR1\";
-            string rootPathDir2 = @"D:\L13DIR\DIR2\";
+            string rootPathDir1 = @"D:\L13DIR\DIR1";
+            string rootPathDir2 = @"D:\L13DIR\DIR2";
 
-            List<string> filesDir1 = new List<string>(Directory.GetFiles(rootPathDir1, "*.*", SearchOption.AllDirectories));
-            List<string> filesDir2 = new List<string>(Directory.GetFiles(rootPathDir2, "*.*", SearchOption.AllDirectories));
+            DirectoryInfo d1 = new DirectoryInfo(rootPathDir1);
+            DirectoryInfo d2 = new DirectoryInfo(rootPathDir2);
 
-            List<Hash> filesHashDir1 = new List<Hash>();
-            List<Hash> filesHashDir2 = new List<Hash>();
+            DeleteFiles(d1, d2);
+            CopyFiles(d1, d2);
 
-
-            void HashingFiles(List<string> filesDir, List<Hash> filesHashDir)
-            {
-                foreach (var file in filesDir)
-                {
-                    var fileHash = HashFile.HashingFiles(file);
-                    filesHashDir.Add(new Hash() { filePath = file, hash = fileHash });
-                }
-            }
-            HashingFiles(filesDir1, filesHashDir1);
-            HashingFiles(filesDir2, filesHashDir2);
-
+            Console.ReadLine();
+        }
+        public static void CopyFiles(DirectoryInfo d1, DirectoryInfo d2)
+        {
             //IF A FILE EXISTS IN DIR1 BUT NOT IN DIR2, IT SHOULD BE COPIED
-            foreach (var hash in filesHashDir1)
+            foreach (var file in Directory.GetFiles(d1.FullName, "*.*", SearchOption.AllDirectories))
             {
                 try
                 {
-                    File.Copy(hash.filePath, $"{rootPathDir2}{Path.GetFileName(hash.filePath)}");
+                    File.Copy(file, $@"{d2.FullName}\{Path.GetFileName(file)}");
                 }
                 catch
                 {
                     //IF A FILE EXISTS IN DIR1 AND IN DIR2, BUT CONTENT IS CHANGED, THEN FILE FROM DIR1 SHOULD OVERWRITE THE ONE FROM DIR2
-                    File.Copy(hash.filePath, $"{rootPathDir2}{Path.GetFileName(hash.filePath)}", true);
+                    File.Copy(file, $@"{d2.FullName}\{Path.GetFileName(file)}", true);
                 }
             }
-
-            Console.ReadLine();
         }
-    }
-
-    public class Hash
-    {
-        public string hash;
-        public string filePath;
-    }
-
-    public class HashFile
-    {
-        public static string HashingFiles(string rootPath)
+        //IF A FILE EXISTS IN DIR2 BUT NOT IN DIR1, IT SHOULD BE REMOVED
+        private static void DeleteFiles(DirectoryInfo d1, DirectoryInfo d2) //Finnaly fucking works
         {
-
-            byte[] buffer;
-            int bytesRead;
-            long size;
-            long totalBytesRead = 0;
-
-            using (Stream file = File.OpenRead(rootPath))
+            var d1Info = Directory.GetFiles(d1.FullName, "*.*", SearchOption.AllDirectories);
+            foreach (var file in Directory.GetFiles(d2.FullName, "*.*", SearchOption.AllDirectories))
             {
-                size = file.Length;
-                using (HashAlgorithm hasher = MD5.Create())
+                var fileName = Path.GetFileName(file);
+                if (!d1Info.Contains($@"{d1.FullName}\{fileName}"))
                 {
-                    do
-                    {
-                        buffer = new byte[4096];
-                        bytesRead = file.Read(buffer, 0, buffer.Length);
-                        totalBytesRead += bytesRead;
-                        hasher.TransformBlock(buffer, 0, bytesRead, null, 0);
-                    }
-                    while (bytesRead != 0);
-
-                    hasher.TransformFinalBlock(buffer, 0, 0);
-
-                    return MakeHashString(hasher.Hash);
-
+                    File.Delete(file);
                 }
             }
         }
 
-        public static string MakeHashString(byte[] hashBytes)
-        {
-            StringBuilder hash = new StringBuilder(32);
-            foreach (byte b in hashBytes)
-            {
-                hash.Append(b.ToString("X2").ToLower());
-            }
-            return hash.ToString();
-        }
+        //private static void RunFolderWatcher(string directoryPath)
+        //{
+        //    FileSystemWatcher watcher = new FileSystemWatcher(directoryPath);
+
+        //    watcher.Path = directoryPath;
+        //    watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.CreationTime | NotifyFilters.FileName | NotifyFilters.Size;
+        //    watcher.Filter = "*.*";
+
+        //    watcher.Created += OnChanged;
+        //    //watcher.Changed += OnChanged;
+        //    //watcher.Deleted += OnChanged;
+        //    //watcher.Renamed += OnChanged;
+
+        //    watcher.IncludeSubdirectories = true;
+        //    watcher.EnableRaisingEvents = true;
+
+        //}
+
+        //private static void OnChanged(object sender, FileSystemEventArgs e)
+        //{
+        //    DirectoryInfo d1 = new DirectoryInfo(@"D:\L13DIR\DIR1");
+        //    DirectoryInfo d2 = new DirectoryInfo(@"D:\L13DIR\DIR2");
+
+        //    Console.WriteLine("File Copied To DIR2");
+        //    foreach (var file in Directory.GetFiles(d1.FullName, "*.*", SearchOption.AllDirectories))
+        //    {
+
+        //        File.Copy(e.FullPath, Path.Combine(d2.FullName,e.Name));
+
+        //        //if (!File.Exists(file.Replace(d2.FullName, d1.FullName)))
+        //        //{
+        //        //    File.Delete(file);
+        //        //}
+        //    }
+        //    //var targetPath = Path.Combine(@"D:\L13DIR\DIR2", Path.GetFileName(e.FullPath.ToString()));
+        //    //File.Copy(e.FullPath.ToString(), targetPath);
+        //}
 
     }
 
