@@ -24,9 +24,12 @@ namespace Lesson13
             DeleteFiles(d1, d2);
             CopyFiles(d1, d2);
 
+            RunFolderWatcher(rootPathDir1);
+            //RunFolderWatcher(rootPathDir2);
+
             Console.ReadLine();
         }
-        public static void CopyFiles(DirectoryInfo d1, DirectoryInfo d2)
+        private static void CopyFiles(DirectoryInfo d1, DirectoryInfo d2)
         {
             //IF A FILE EXISTS IN DIR1 BUT NOT IN DIR2, IT SHOULD BE COPIED
             foreach (var file in Directory.GetFiles(d1.FullName, "*.*", SearchOption.AllDirectories))
@@ -55,44 +58,36 @@ namespace Lesson13
                 }
             }
         }
+        //Workign here still...
+        private static void RunFolderWatcher(string directoryPath)
+        {
+            FileSystemWatcher watcher = new FileSystemWatcher(directoryPath);
 
-        //private static void RunFolderWatcher(string directoryPath)
-        //{
-        //    FileSystemWatcher watcher = new FileSystemWatcher(directoryPath);
+            watcher.Path = directoryPath;
+            watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.CreationTime | NotifyFilters.FileName | NotifyFilters.Size;
+            watcher.Filter = "*.*";
 
-        //    watcher.Path = directoryPath;
-        //    watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.CreationTime | NotifyFilters.FileName | NotifyFilters.Size;
-        //    watcher.Filter = "*.*";
+            watcher.Created += OnCreated;
+            watcher.Changed += OnCreated;
+            watcher.Deleted += OnDeleted;
+            //watcher.Renamed += OnChanged;
 
-        //    watcher.Created += OnChanged;
-        //    //watcher.Changed += OnChanged;
-        //    //watcher.Deleted += OnChanged;
-        //    //watcher.Renamed += OnChanged;
+            watcher.IncludeSubdirectories = true;
+            watcher.EnableRaisingEvents = true;
 
-        //    watcher.IncludeSubdirectories = true;
-        //    watcher.EnableRaisingEvents = true;
-
-        //}
-
-        //private static void OnChanged(object sender, FileSystemEventArgs e)
-        //{
-        //    DirectoryInfo d1 = new DirectoryInfo(@"D:\L13DIR\DIR1");
-        //    DirectoryInfo d2 = new DirectoryInfo(@"D:\L13DIR\DIR2");
-
-        //    Console.WriteLine("File Copied To DIR2");
-        //    foreach (var file in Directory.GetFiles(d1.FullName, "*.*", SearchOption.AllDirectories))
-        //    {
-
-        //        File.Copy(e.FullPath, Path.Combine(d2.FullName,e.Name));
-
-        //        //if (!File.Exists(file.Replace(d2.FullName, d1.FullName)))
-        //        //{
-        //        //    File.Delete(file);
-        //        //}
-        //    }
-        //    //var targetPath = Path.Combine(@"D:\L13DIR\DIR2", Path.GetFileName(e.FullPath.ToString()));
-        //    //File.Copy(e.FullPath.ToString(), targetPath);
-        //}
+        }
+        public static void OnCreated(object sender, FileSystemEventArgs e)
+        {
+            DirectoryInfo d1 = new DirectoryInfo(@"D:\L13DIR\DIR1");
+            DirectoryInfo d2 = new DirectoryInfo(@"D:\L13DIR\DIR2");
+            CopyFiles(d1,d2);
+        }
+        private static void OnDeleted(object sender, FileSystemEventArgs e)
+        {
+            DirectoryInfo d1 = new DirectoryInfo(@"D:\L13DIR\DIR1");
+            DirectoryInfo d2 = new DirectoryInfo(@"D:\L13DIR\DIR2");
+            DeleteFiles(d1, d2);
+        }
 
     }
 
